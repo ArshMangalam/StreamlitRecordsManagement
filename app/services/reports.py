@@ -26,8 +26,7 @@ def generate_excel(records: List[Dict]) -> bytes:
     return output.getvalue()
 
 def generate_pdf_summary(records: List[Dict], statistics: Dict) -> bytes:
-    from weasyprint import HTML, CSS
-    from io import StringIO
+    from weasyprint import HTML
 
     html_content = f"""
     <!DOCTYPE html>
@@ -105,19 +104,19 @@ def generate_pdf_summary(records: List[Dict], statistics: Dict) -> bytes:
             </div>
             <div class="stat">
                 <div class="stat-label">Total Value</div>
-                <div class="stat-value">{statistics['sum']:.2f}</div>
+                <div class="stat-value">${statistics['sum']:.2f}</div>
             </div>
             <div class="stat">
                 <div class="stat-label">Average Value</div>
-                <div class="stat-value">{statistics['average']:.2f}</div>
+                <div class="stat-value">${statistics['average']:.2f}</div>
             </div>
             <div class="stat">
                 <div class="stat-label">Min Value</div>
-                <div class="stat-value">{statistics['min']:.2f}</div>
+                <div class="stat-value">${statistics['min']:.2f}</div>
             </div>
             <div class="stat">
                 <div class="stat-label">Max Value</div>
-                <div class="stat-value">{statistics['max']:.2f}</div>
+                <div class="stat-value">${statistics['max']:.2f}</div>
             </div>
         </div>
 
@@ -147,7 +146,7 @@ def generate_pdf_summary(records: List[Dict], statistics: Dict) -> bytes:
                 <tr>
                     <td>{record.get('title', 'N/A')}</td>
                     <td>{record.get('category', 'N/A')}</td>
-                    <td>{record.get('value', 0):.2f}</td>
+                    <td>${record.get('value', 0):.2f}</td>
                     <td>{timestamp}</td>
                 </tr>
         """

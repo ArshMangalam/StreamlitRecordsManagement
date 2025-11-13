@@ -1,8 +1,7 @@
 import bcrypt
 import uuid
 from typing import Optional, Dict
-from datetime import datetime
-from app.utils.database import get_supabase_client
+from app.models import get_supabase_client
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -10,7 +9,10 @@ def hash_password(password: str) -> str:
     return hashed.decode('utf-8')
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+    except Exception:
+        return False
 
 def register_user(email: str, password: str, is_guest: bool = False) -> Optional[Dict]:
     try:
@@ -24,7 +26,12 @@ def register_user(email: str, password: str, is_guest: bool = False) -> Optional
         }).execute()
 
         if response.data:
-            return response.data[0]
+            user = response.data[0]
+            return {
+                'id': user['id'],
+                'email': user['email'],
+                'is_guest': user['is_guest']
+            }
         return None
     except Exception as e:
         print(f"Registration error: {e}")
@@ -39,7 +46,11 @@ def login_user(email: str, password: str) -> Optional[Dict]:
         if response.data:
             user = response.data
             if verify_password(password, user['password_hash']):
-                return user
+                return {
+                    'id': user['id'],
+                    'email': user['email'],
+                    'is_guest': user['is_guest']
+                }
 
         return None
     except Exception as e:
@@ -50,3 +61,14 @@ def create_guest_user() -> Optional[Dict]:
     guest_email = f"guest_{uuid.uuid4().hex[:8]}@guest.local"
     guest_password = uuid.uuid4().hex
     return register_user(guest_email, guest_password, is_guest=True)
+
+def get_user_by_id(user_id: str) -> Optional[Dict]:
+    try:
+        client = get_supabase_client()
+
+        response = client.table('users').select('id, email, is_guest').eq('id', user_id).maybeSingle().execute()
+
+        return response.data
+    except Exception as e:
+        print(f"Get user error: {e}")
+        return None

@@ -2,7 +2,10 @@ import os
 import requests
 from datetime import datetime
 from typing import Optional, Dict, List
-from app.utils.database import get_supabase_client
+from app.models import get_supabase_client
+from apscheduler.schedulers.background import BackgroundScheduler
+
+_scheduler: Optional[BackgroundScheduler] = None
 
 def fetch_external_data(url: str) -> Dict:
     try:
@@ -67,3 +70,31 @@ def get_job_history(limit: int = 10) -> List[Dict]:
     except Exception as e:
         print(f"Error getting job history: {e}")
         return []
+
+def start_scheduler():
+    global _scheduler
+
+    if _scheduler is not None and _scheduler.running:
+        return
+
+    _scheduler = BackgroundScheduler()
+    external_api_url = os.getenv("EXTERNAL_API_URL", "https://jsonplaceholder.typicode.com/posts")
+    job_interval = int(os.getenv("JOB_INTERVAL_MIN", "5"))
+
+    _scheduler.add_job(
+        func=lambda: fetch_external_data(external_api_url),
+        trigger="interval",
+        minutes=job_interval,
+        id="fetch_external_data",
+        name="Fetch External Data",
+        replace_existing=True
+    )
+
+    _scheduler.start()
+
+def stop_scheduler():
+    global _scheduler
+
+    if _scheduler is not None and _scheduler.running:
+        _scheduler.shutdown()
+        _scheduler = None

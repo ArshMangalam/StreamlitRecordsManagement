@@ -17,7 +17,3 @@ def get_supabase_client() -> Client:
         _supabase_client = create_client(url, key)
 
     return _supabase_client
-
-def execute_query(query: str, params: dict = None):
-    client = get_supabase_client()
-    return client.rpc('execute_sql', {'query': query, 'params': params or {}})

@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict
 from datetime import datetime
-from app.utils.database import get_supabase_client
+from app.models import get_supabase_client
 
 def create_record(user_id: str, title: str, category: str, value: float, timestamp: datetime = None, metadata: dict = None) -> Optional[Dict]:
     try:

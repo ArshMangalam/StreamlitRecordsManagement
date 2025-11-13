@@ -1,8 +1,8 @@
-streamlit==1.31.0
+Flask==3.0.0
+Flask-CORS==4.0.0
 supabase==2.3.4
 bcrypt==4.1.2
 pandas==2.2.0
-plotly==5.18.0
 openpyxl==3.1.2
 weasyprint==61.0
 requests==2.31.0

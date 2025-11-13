@@ -1,39 +1,43 @@
-# Streamlit CRUD Web App
+# Flask CRUD Web Application
 
-A minimal, production-ready Streamlit web application with authentication, CRUD operations, dynamic dashboards, report generation, and background job scheduling.
+A production-ready Flask web application with authentication, CRUD operations, dynamic dashboards, report generation, and background job scheduling.
 
 ## Features
 
 - **Authentication**: Email/password login with bcrypt hashing, or optional guest mode
-- **CRUD Operations**: Create, read, update, and delete records with flexible metadata
-- **Dynamic Dashboard**: KPI cards, interactive time series charts, and category breakdowns with filters
+- **CRUD Operations**: RESTful API for creating, reading, updating, and deleting records
+- **Dashboard**: Real-time KPI metrics and analytics with filtering
 - **Report Generation**: Export data as CSV, Excel, and PDF with summary statistics
 - **Background Jobs**: APScheduler-based background data fetching from external APIs
-- **Supabase Backend**: Secure, scalable database with Row Level Security (RLS)
+- **Supabase Backend**: Secure, scalable PostgreSQL database with Row Level Security
 
 ## Project Structure
 
 ```
 .
 ├── app/
-│   ├── __init__.py
-│   ├── main.py                 # Main Streamlit application
-│   ├── pages/
-│   │   ├── auth.py            # Login/register/guest pages
-│   │   ├── dashboard.py       # Dashboard with charts and KPIs
-│   │   ├── records_page.py    # CRUD interface for records
-│   │   ├── reports_page.py    # Report generation and downloads
-│   │   └── jobs_page.py       # Background job management
+│   ├── __init__.py                 # Flask app factory
+│   ├── models/
+│   │   └── __init__.py            # Database client
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── auth.py                # Authentication endpoints
+│   │   ├── records.py             # Records CRUD endpoints
+│   │   ├── reports.py             # Report export endpoints
+│   │   └── jobs.py                # Background job endpoints
 │   ├── services/
-│   │   ├── records.py         # Record CRUD operations
-│   │   ├── reports.py         # Report generation logic
-│   │   └── background_jobs.py # Background job functions
-│   └── utils/
-│       ├── database.py        # Supabase client
-│       └── auth.py            # Authentication utilities
+│   │   ├── auth.py                # Authentication logic
+│   │   ├── records.py             # Records business logic
+│   │   ├── reports.py             # Report generation
+│   │   └── jobs.py                # Background job logic
+│   ├── templates/
+│   │   └── index.html             # Single-page app HTML
+│   └── static/
+│       ├── css/style.css          # Styling
+│       └── js/app.js              # Frontend application
 ├── tests/
-│   ├── test_records.py        # CRUD tests
-│   └── test_reports.py        # Report export tests
+│   └── test_api.py                # API tests
+├── run.py                         # Application entry point
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -62,6 +66,8 @@ SUPABASE_URL=your_supabase_url_here
 SUPABASE_KEY=your_supabase_anon_key_here
 EXTERNAL_API_URL=https://jsonplaceholder.typicode.com/posts
 JOB_INTERVAL_MIN=5
+SECRET_KEY=your-secret-key-here
+FLASK_ENV=development
 ```
 
 ### 3. Database Setup
@@ -77,46 +83,64 @@ All tables have Row Level Security (RLS) enabled for data protection.
 ### 4. Run the Application
 
 ```bash
-streamlit run app/main.py
+python run.py
 ```
 
-The app will open in your browser at `http://localhost:8501`
+The app will be available at `http://localhost:5000`
 
 ## Usage
 
 ### First Time Setup
 
-1. **Register or Use Guest Mode**: Create an account with email/password or click "Continue as Guest"
+1. **Register or Use Guest Mode**: Create an account or use guest access
 2. **Create Records**: Navigate to "Records" and add your first record
-3. **View Dashboard**: Check the "Dashboard" to see KPIs and charts
-4. **Generate Reports**: Go to "Reports" to export data as CSV, Excel, or PDF
-5. **Background Jobs**: Visit "Background Jobs" to manually trigger data fetching
+3. **View Dashboard**: Check the "Dashboard" to see KPIs and analytics
+4. **Generate Reports**: Go to "Reports" to export data
+5. **Background Jobs**: Visit "Jobs" to manage data fetching
 
-### Dashboard Filters
+### API Endpoints
 
-- **Category**: Filter by specific category or view all
-- **Date Range**: Set start and end dates to focus on specific time periods
+#### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login with email/password
+- `POST /api/auth/guest` - Create guest account
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/logout` - Logout
+
+#### Records
+- `POST /api/records/create` - Create record
+- `GET /api/records/list` - List user records (supports filters)
+- `GET /api/records/<id>` - Get single record
+- `PUT /api/records/<id>` - Update record
+- `DELETE /api/records/<id>` - Delete record
+- `GET /api/records/statistics` - Get KPI statistics
+
+#### Reports
+- `GET /api/reports/csv` - Export as CSV
+- `GET /api/reports/excel` - Export as Excel
+- `GET /api/reports/pdf` - Export as PDF
+- `GET /api/reports/summary` - Get summary statistics
+
+#### Background Jobs
+- `POST /api/jobs/run` - Manually trigger job
+- `GET /api/jobs/last-run` - Get last job execution
+- `GET /api/jobs/history` - Get job history
+- `GET /api/jobs/config` - Get job configuration
+- `POST /api/jobs/start-scheduler` - Start background scheduler
 
 ### Record Fields
 
-- **Title**: Descriptive name for the record
-- **Category**: Classification (e.g., Sales, Marketing, Operations)
+- **Title**: Descriptive name
+- **Category**: Classification/type
 - **Value**: Numeric value
-- **Timestamp**: Date and time of the record
-- **Metadata**: JSON object for additional flexible data
+- **Timestamp**: Date and time
+- **Metadata**: JSON object for flexible data
 
-### Report Types
+### Filters Available
 
-- **CSV**: Simple comma-separated values for spreadsheet import
-- **Excel**: Formatted workbook with all record data
-- **PDF**: Summary report with statistics and top records
-
-### Background Jobs
-
-- Jobs run automatically at the configured interval
-- Manual trigger available in the "Background Jobs" page
-- View job history and success/error status
-- Fetched data is stored in the `background_data` table
+- **Category**: Filter by specific category
+- **Date Range**: Filter by start and end dates
+- All filters are applied across records, statistics, and reports
 
 ## Running Tests
 
@@ -125,71 +149,154 @@ pytest tests/ -v
 ```
 
 Tests cover:
-- CRUD operations for records
-- Report generation (CSV, Excel, PDF)
-- Error handling and edge cases
+- Authentication endpoints
+- CRUD operations
+- Report generation
+- Statistics calculation
+- Unauthorized access
 
 ## Key Technologies
 
-- **Streamlit**: Web UI framework
-- **Supabase**: PostgreSQL database with real-time capabilities
-- **Plotly**: Interactive charts and visualizations
-- **Pandas**: Data manipulation and CSV/Excel export
+- **Flask**: Lightweight web framework
+- **Supabase**: PostgreSQL database with RLS
+- **Pandas**: Data manipulation and export
 - **WeasyPrint**: HTML-to-PDF conversion
 - **APScheduler**: Background job scheduling
 - **bcrypt**: Secure password hashing
 - **pytest**: Testing framework
+- **Flask-CORS**: Cross-origin resource sharing
 
-## Security Notes
+## Architecture
 
-- All passwords are hashed using bcrypt
-- Row Level Security (RLS) ensures users only access their own data
-- Supabase connection uses environment variables (never hardcoded)
-- Guest accounts are isolated and temporary
+### Frontend
+- Single-page application (SPA) built with vanilla JavaScript
+- Responsive design with CSS Grid and Flexbox
+- Real-time UI updates
 
-## Production Considerations
+### Backend
+- RESTful API with Flask blueprints
+- Session-based authentication with server-side storage
+- Service layer for business logic separation
 
-For production deployment:
+### Database
+- Supabase PostgreSQL with RLS policies
+- User isolation through RLS
+- Indexed queries for performance
 
-1. **Environment Variables**: Use secure secret management (AWS Secrets Manager, etc.)
-2. **Background Jobs**: Replace in-memory APScheduler with persistent queue (Celery, AWS Lambda)
-3. **Hosting**: Deploy on Streamlit Cloud, AWS, or Docker containers
-4. **Monitoring**: Add logging and error tracking (Sentry, CloudWatch)
-5. **Rate Limiting**: Implement API rate limits for external data fetching
-6. **Database Backups**: Enable automated Supabase backups
+## Security Features
+
+- **Password Security**: Bcrypt hashing with salt
+- **Row Level Security**: Users only access their own data
+- **Session Management**: Server-side session storage
+- **CORS**: Protected cross-origin requests
+- **Input Validation**: Server-side validation on all endpoints
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| SUPABASE_URL | Supabase project URL |
+| SUPABASE_KEY | Supabase anonymous key |
+| EXTERNAL_API_URL | External API endpoint for jobs |
+| JOB_INTERVAL_MIN | Background job interval in minutes |
+| SECRET_KEY | Flask secret key (must be set in production) |
+| FLASK_ENV | development or production |
+
+## Production Deployment
+
+For production:
+
+1. **Set strong SECRET_KEY** in environment
+2. **Disable debug mode**: Set `FLASK_ENV=production`
+3. **Use production WSGI server**: Gunicorn or uWSGI
+4. **Enable HTTPS**: Use reverse proxy like Nginx
+5. **Database backups**: Enable Supabase automated backups
+6. **Monitoring**: Add logging and error tracking
+7. **Rate limiting**: Implement API rate limits
+
+Example with Gunicorn:
+
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
+```
 
 ## Troubleshooting
 
 ### "SUPABASE_URL not set" Error
 
-Make sure you have a `.env` file in the project root with valid credentials.
+Ensure `.env` file exists in project root with valid credentials.
 
-### Charts Not Displaying
+### Database Connection Issues
 
-Ensure you have records in the database. The dashboard needs data to visualize.
+Check that:
+- SUPABASE_URL and SUPABASE_KEY are correct
+- Network has access to Supabase
+- Database tables exist (run migrations)
 
 ### PDF Generation Fails
 
-WeasyPrint requires system libraries. On Ubuntu/Debian:
+Install system dependencies:
 
+**Ubuntu/Debian:**
 ```bash
 sudo apt-get install libpango-1.0-0 libpangoft2-1.0-0
 ```
 
-On macOS:
-
+**macOS:**
 ```bash
 brew install pango
 ```
 
-### Background Jobs Not Running
+### Background Jobs Not Starting
 
-Jobs run in-memory and reset on app restart. Check the "Background Jobs" page to manually trigger.
+Jobs start automatically with the app. Check:
+- APScheduler is installed
+- No scheduler already running
+- Check application logs
+
+## API Response Format
+
+All endpoints return JSON responses:
+
+**Success Response:**
+```json
+{
+    "message": "Operation successful",
+    "data": {...}
+}
+```
+
+**Error Response:**
+```json
+{
+    "error": "Error message describing the issue"
+}
+```
+
+## Performance Optimization
+
+- Database queries use indexes on user_id, category, timestamp
+- Records are paginated in list views
+- Export operations stream data to avoid memory issues
+- Background jobs run in separate thread
+
+## Contributing
+
+Guidelines for extending the application:
+
+1. Create new endpoints in appropriate api/*.py file
+2. Add business logic to services/*.py
+3. Add tests for new functionality
+4. Update documentation
 
 ## License
 
-MIT License - Feel free to use this as a template for your own projects.
+MIT License - Use freely for personal and commercial projects
 
 ## Support
 
-For issues or questions, please check the troubleshooting section or review the inline code comments.
+For issues or questions:
+1. Check troubleshooting section
+2. Review inline code comments
+3. Check test files for usage examples
